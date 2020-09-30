@@ -1,0 +1,35 @@
+#Prompt the user for hours and rate per hour and compute gross pay.
+#Pay: 
+#   up to 40 hours - normal
+#   above 40h - 1.5 for the hourly rate
+
+OVERTIME_BORDER = 40 #Hours
+
+def computepay(hours, rate):
+    if(hours <= 40):
+        return hours * rate
+    elif(hours > OVERTIME_BORDER):
+        normal_pay = OVERTIME_BORDER * rate
+        overtime_hours = hours - OVERTIME_BORDER
+        overtime_rate = rate * 1.5
+        overtime_pay = overtime_hours * overtime_rate
+        return normal_pay + overtime_pay
+
+def convert_input(input):
+    try:
+        converted_value = float(input)
+    except:
+        print("Input has to be a floating point number! The application will terminate.")
+        os.system("pause")
+        exit()
+    return converted_value
+    
+    
+input_hours = input("Enter Hours:")
+input_rate = input("Enter Rate:")
+
+hours = convert_input(input_hours)
+rate = convert_input(input_rate)
+
+pay = computepay(hours, rate)
+print("Pay", pay)
