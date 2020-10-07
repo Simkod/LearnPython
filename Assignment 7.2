@@ -1,0 +1,71 @@
+#7.2
+#Write a program that prompts for a file name,
+#then opens that file and reads through it.
+
+#Looking for lines of the form:
+#"X-DSPAM-Confidence:    0.8475"
+
+#Count these lines and extract the floating point values.
+#Compute the average of those values and produce an output
+
+#Do not use the sum() function or a variable named sum.
+#You can download the sample data at:
+#http://www.py4e.com/code3/mbox-short.txt
+
+def extract_float(text):
+	colon_pos = text.find(".")
+	#two sided loops to find digits
+	left_is_number = False
+	right_is_number = False
+	extracted_number = ""
+	if(text[colon_pos - 1].isdigit() and text[colon_pos + 1].isdigit()):
+		left_is_number = True
+		right_is_number = True
+		extracted_number = text[colon_pos]
+	
+	counter = 1
+	while(left_is_number or right_is_number):
+		#Left
+		if(colon_pos - counter >= 0):
+			if(text[colon_pos - counter].isdigit()):
+				left_is_number = True
+				extracted_number = text[colon_pos - counter] + extracted_number
+			else:
+				left_is_number = False
+		else:
+			left_is_number = False
+		#Right
+		if(colon_pos + counter <= len(text) - 1):
+			if(text[colon_pos + counter].isdigit()):
+				right_is_number = True
+				extracted_number += text[colon_pos + counter]
+			else:
+				right_is_number = False
+		else:
+			right_is_number = False
+	
+		counter += 1
+	
+	try:
+		extracted_float = float(extracted_number)
+		return extracted_float
+	except:
+		print("Extracting float from", text.rstrip(), " failed.")
+
+
+fname = input("Enter file name: ")
+fh = open(fname)
+
+n = 0
+total = 0
+
+for line in fh:
+	if not line.startswith("X-DSPAM-Confidence:"):
+		continue
+	else:
+		spam_confidence = extract_float(line)
+		total += spam_confidence
+		n += 1
+
+average_confidence = total / n
+print("Average spam confidence:", average_confidence)
