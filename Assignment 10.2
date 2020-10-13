@@ -1,0 +1,45 @@
+# Assignment 10.2
+# Write a program to read through the mbox-short.txt
+#	and figure out the distribution by hour of the day for each of the messages.
+# You can pull the hour out from the 'From ' line by finding the time
+#	and then splitting the string a second time using a colon.
+# Example line: From stephen.marquard@uct.ac.za Sat Jan  5 09:14:16 2008
+# Once you have accumulated the counts for each hour,
+#	print out the counts, sorted by hour.
+
+# You can download the sample data at http://www.py4e.com/code3/mbox-short.txt
+
+def extract_time(file):
+	sending_times = list()
+	for line in file:
+		if line.startswith('From '):
+			line = line.split()
+			sending_time = line[5].split(":")[0]
+			sending_times.append(sending_time)
+	sending_times.sort()
+	return sending_times
+
+
+def create_frequency_histogram(list):
+	frequency_histogram = dict()
+	for element in list:
+		frequency_histogram[element] = frequency_histogram.get(element, 0) + 1
+	return frequency_histogram
+
+
+def print_dictionary(dictionary):
+	for key, value in dictionary.items():
+		print(key, value)
+
+
+if __name__ == '__main__':
+	filename = input("Enter file name: ")
+	if len(filename) < 2:
+	   filename = "mbox-short.txt"
+	file_handler = open(filename)
+	
+	sending_times = extract_time(file_handler)
+
+	sending_times_frequency = create_frequency_histogram(sending_times)
+	
+	print_dictionary(sending_times_frequency)
