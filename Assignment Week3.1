@@ -1,0 +1,150 @@
+# Assignment Week3.1: Musical Track Database
+#
+# This application will read an iTunes export file in XML and produce a properly normalized database.
+#
+# If you run the program multiple times in testing or with different files, make sure to empty out the data before each run.
+#
+# Starting point for the application: http://www.py4e.com/code3/tracks.zip
+
+
+import xml.etree.ElementTree as ET
+import sqlite3
+import time
+
+start_time = time.time()
+
+conn = sqlite3.connect('trackdb.sqlite')
+cur = conn.cursor()
+
+# Make some fresh tables using executescript()
+cur.executescript('''
+DROP TABLE IF EXISTS Artist;
+DROP TABLE IF EXISTS Genre;
+DROP TABLE IF EXISTS Album;
+DROP TABLE IF EXISTS Track;
+
+CREATE TABLE Artist (
+    id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    name    TEXT UNIQUE
+);
+
+CREATE TABLE Genre (
+    id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    name    TEXT UNIQUE
+);
+
+CREATE TABLE Album (
+    id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    artist_id  INTEGER,
+    title   TEXT UNIQUE
+);
+
+CREATE TABLE Track (
+    id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    title TEXT  UNIQUE,
+    genre_id INTEGER,
+    album_id INTEGER,
+    len INTEGER,
+    rating INTEGER,
+    count INTEGER
+);
+''')
+
+
+#fname = input('Enter file name: ')
+#if ( len(fname) < 2 ) : fname = 'Library.xml'
+fname = 'Library.xml'
+
+# <key>Track ID</key><integer>369</integer>
+# <key>Name</key><string>Another One Bites The Dust</string>
+# <key>Artist</key><string>Queen</string>
+def lookup(d, key):
+    found = False
+    for child in d:
+        if found:
+            return child.text
+        if child.tag == 'key' and child.text == key:
+            found = True
+    return None
+
+
+def lookup_track_data(d, dict):
+    found = False
+    found_key = ''
+    for child in d:
+        if found:
+            dict[found_key] = child.text
+            found = False
+            continue
+        if child.tag == 'key':
+           if child.text == 'Name':
+               found = True
+               found_key = 'name'
+               continue
+           if child.text == 'Artist':
+               found = True
+               found_key = 'artist'
+               continue
+           if child.text == 'Album':
+               found = True
+               found_key = 'album'
+               continue
+           if child.text == 'Genre':
+               found = True
+               found_key = 'genre'
+               continue
+           if child.text == 'Total Time':
+               found = True
+               found_key = 'lenght'
+               continue
+           if child.text == 'Play Count':
+               found = True
+               found_key = 'count'
+               continue
+           if child.text == 'Rating':
+               found = True
+               found_key = 'rating'
+               continue
+           else:
+               continue
+    return dict
+
+stuff = ET.parse(fname)
+all = stuff.findall('dict/dict/dict')
+print('Dict count:', len(all))
+for entry in all:
+    if ( lookup(entry, 'Track ID') is None ):
+        continue
+
+    track_data = {'name': '', 'artist': '', 'album': '', 'genre': '', 'lenght': '', 'count': '', 'rating': ''}
+    track_data = lookup_track_data(entry, track_data)
+
+    name = track_data['name']
+    artist = track_data['artist']
+    album = track_data['album']
+    genre = track_data['genre']
+    length = track_data['lenght']
+    count = track_data['count']
+    rating = track_data['rating']
+
+    if name is None or artist is None or album is None or genre is None: 
+        continue
+
+    print(name, genre, artist, album, count, rating, length)
+
+    cur.execute('''INSERT OR IGNORE INTO Artist (name) VALUES ( ? )''', ( artist, ) )
+    cur.execute('SELECT id FROM Artist WHERE name = ? ', (artist, ))
+    artist_id = cur.fetchone()[0]
+
+    cur.execute('''INSERT OR IGNORE INTO Genre (name) VALUES ( ? )''', ( genre, ) )
+    cur.execute('SELECT id FROM Genre WHERE name = ? ', (genre, ))
+    genre_id = cur.fetchone()[0]
+
+    cur.execute('''INSERT OR IGNORE INTO Album (title, artist_id) VALUES ( ?, ? )''', ( album, artist_id ) )
+    cur.execute('SELECT id FROM Album WHERE title = ? ', (album, ))
+    album_id = cur.fetchone()[0]
+
+    cur.execute('''INSERT OR REPLACE INTO Track (title, genre_id, album_id, len, rating, count) VALUES ( ?, ?, ?, ?, ?, ? )''', ( name, genre_id, album_id, length, rating, count ) )
+
+conn.commit()
+print("Runtime: --- %s seconds ---" % (time.time() - start_time))
